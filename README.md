@@ -44,6 +44,21 @@ The second big step is to reduce the 328's CPU speed to 8 MHz from the 16 MHz pa
 
 This change involves reprogramming the *low fuse byte* of the 328 to 0xE2. It is not difficult to do, using the *avrdude* utility that comes with the Arduino IDE. The procedure requires an ICSP programmer, which is easily prepared using the *Arduino as ISP* technique. Tutorials explaining all this can be found online. I might write one myself, some day. 
 
+### Calibrate the Internal Oscillator
+This is an optional step. I include it here to illustrate an important capability of the ATmega328P. It features something it proudly calls a *Calibrated Internal RC Oscillator*, which provides the primary clock source when running the 328 without an external crystal. The datasheet has this to say about it:
+
+<blockquote>
+By default, the Internal RC Oscillator provides an approximate 8.0MHz clock. Though voltage and temperature dependent, this clock can be very accurately calibrated by the user. 
+</blockquote>
+
+The adjective, *approximate*, confesses a fairly wide degree of manufacturing variation in the oscillator's frequency. The datasheet tells us it will be within 10 percent of the nominal 8 MHz. In other words, expect to find it somewhere between 7.2 MHz and 8.8 MHz, perhaps, for any particular ATmega328P. 
+
+However -- and this is important -- whatever the rate might be it will stay very consistent, holding voltage and temperature constant. Even better, user code can change the frequency by storing a value into the Oscillator Calibration register, named OSCCAL. See page 43 in the datasheet.
+
+With the aid of an oscilloscope I discovered a value that would calibrate my particular 328 to run at 8 MHz almost perfectly. This value I stored into the non-volatile EEPROM memory of the device. Lines 138-143 in the example program retrieve this value and write it into OSCCAL. Result: my tea-timer ticks off the seconds like, well, clockwork.
+
+[back to list of sections](#techniques)
+
 ### Turn Off Major Components
 The ATmega328P microcontroller combines many, different peripherals, which are just specialized circuits on its tiny sliver of silicon. Each circuit consumes power while performing one of the chip's powerful functions. Fortunately, each circuit can be turned off or on by the software running in the chip's CPU. This ability to turn off unused peripherals extends even to the CPU itself. 
 
@@ -73,21 +88,6 @@ Lines 112-120 in the example program turn off power to the peripherals that will
 Note that Timer 0 remains enabled in the PRR because it will be used by the ```delay()``` function while the 328 is awake. Putting the 328 into power-down sleep turns off Timer 0 and the CPU, along with everything else.
 
 Engineers would caution against turning off the Brown-Out Detector, which would continue running even during sleep modes. Its role is to protect the ATmega328 when the voltage falls too low. This project accepts the risk of brown-out as part of an experiment in reducing current consumption.   
-
-[back to list of sections](#techniques)
-
-### Calibrate the Internal Oscillator
-This is an optional step. I include it here to illustrate an important capability of the ATmega328P. It features something it proudly calls a *Calibrated Internal RC Oscillator*, which provides the primary clock source when running the 328 without an external crystal. The datasheet has this to say about it:
-
-<blockquote>
-By default, the Internal RC Oscillator provides an approximate 8.0MHz clock. Though voltage and temperature dependent, this clock can be very accurately calibrated by the user. 
-</blockquote>
-
-The adjective, *approximate*, confesses a fairly wide degree of manufacturing variation in the oscillator's frequency. The datasheet tells us it will be within 10 percent of the nominal 8 MHz. In other words, expect to find it somewhere between 7.2 MHz and 8.8 MHz, perhaps, for any particular ATmega328P. 
-
-However -- and this is important -- whatever the rate might be it will stay very consistent, holding voltage and temperature constant. Even better, user code can change the frequency by storing a value into the Oscillator Calibration register, named OSCCAL. See page 43 in the datasheet.
-
-With the aid of an oscilloscope I discovered a value that would calibrate my particular 328 to run at 8 MHz almost perfectly. This value I stored into the non-volatile EEPROM memory of the device. Lines 138-143 in the example program retrieve this value and write it into OSCCAL. Result: my tea-timer ticks off the seconds like, well, clockwork.
 
 [back to list of sections](#techniques)
 
